@@ -11,13 +11,53 @@
         android:layout_height="wrap_content"
         android:textSize="20dp"
         android:gravity="center_horizontal"
-        android:text="Hard Brake/Acceleration counter"/>
+        android:text="Hard Brake counter"/>
     <TextView
         android:id="@+id/hardBrakeCount"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="0"
         android:textSize="50dp"
         android:gravity="center_horizontal|center_vertical"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20dp"
+        android:gravity="center_horizontal"
+        android:text="Hard Accel counter"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/hardAccelCount"
+        android:text="0"
+        android:textSize="50dp"
+        android:gravity="center_horizontal|center_vertical"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Acc: "
+        android:id="@+id/acc"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Latitude: "
+        android:id="@+id/latitude"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Longitude: "
+        android:id="@+id/longitude"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Direção: "
+        android:id="@+id/direcao"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Velocidade: "
+        android:id="@+id/velocidade"/>
 
 </LinearLayout>

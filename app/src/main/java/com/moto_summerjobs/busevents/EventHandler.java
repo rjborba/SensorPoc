@@ -2,17 +2,13 @@ package com.moto_summerjobs.busevents;
 
 import android.util.Log;
 
-/**
- * Created by rjbf2 on 08/02/2018.
- */
-
-public class BrakeHandler {
-    private final float MIN_G_TO_START_EVENT = 2.0f;
+public class EventHandler {
+    private final float MIN_G_TO_START_EVENT = 2f;
     private final float MIN_G_TO_STOP_EVENT = 1.2f;
 
     private final float EARTH_ACC = 9.8f;
     private static float currentX, currentY, currentZ;
-    private static long lastUpdate;
+    private static long lastUpdate, lastSpeed;
 
     private long onGoingEventInitTime;
     private long onGoingEventFinalTime;
@@ -23,17 +19,18 @@ public class BrakeHandler {
 
     private MainActivity mainActivity;
 
-    public BrakeHandler(EventListener eventListener, MainActivity mainActivity){
+    public EventHandler(EventListener eventListener, MainActivity mainActivity){
         this.eventListener = eventListener;
         this.mainActivity = mainActivity;
         this.onGoingAccEvent = new OnGoingAccEvent();
     }
 
-    public void updateValues(float newX, float newY, float newZ, long updateTime){
+    public void updateValues(float newX, float newY, float newZ, long updateTime, long speed){
         currentX = newX;
         currentY = newY;
         currentZ = newZ;
         lastUpdate = updateTime;
+        lastSpeed = speed;
         process();
     }
 
@@ -46,15 +43,15 @@ public class BrakeHandler {
         Log.d("totalAccInG", "G's: " + accTotalInG);
 
         if(accTotalInG > MIN_G_TO_START_EVENT || onGoingAccEvent.isEventStarted()){
-            onGoingAccEvent.startEvent(lastUpdate);
+            onGoingAccEvent.startEvent(lastUpdate, lastSpeed);
             onGoingAccEvent.updateCurrentG(accTotalInG);
 
             if(accTotalInG < MIN_G_TO_STOP_EVENT){
-                onGoingAccEvent.finishEvent(lastUpdate);
+                onGoingAccEvent.finishEvent(lastUpdate, lastSpeed);
 
                 if(onGoingAccEvent.isHardBrakeValidEvent()){
                     //Not distinguishing Accelerations and brakes. Putting everything as a brake event
-                    this.eventListener.onEventRaised(EventType.HardBrake);
+                    this.eventListener.onEventRaised(onGoingAccEvent.getEventType());
                 }
             }
         }
