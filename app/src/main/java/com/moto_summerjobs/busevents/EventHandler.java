@@ -1,17 +1,13 @@
 package com.moto_summerjobs.busevents;
 
-import android.util.Log;
-
 public class EventHandler {
     private final float MIN_G_TO_START_EVENT = 2f;
     private final float MIN_G_TO_STOP_EVENT = 1.2f;
 
     private final float EARTH_ACC = 9.8f;
     private static float currentX, currentY, currentZ;
-    private static long lastUpdate, lastSpeed;
-
-    private long onGoingEventInitTime;
-    private long onGoingEventFinalTime;
+    private static long lastUpdate;
+    private static float currentSpeed;
 
     private EventListener eventListener;
 
@@ -25,13 +21,21 @@ public class EventHandler {
         this.onGoingAccEvent = new OnGoingAccEvent();
     }
 
-    public void updateValues(float newX, float newY, float newZ, long updateTime, long speed){
+    public void updateAccValues(float newX, float newY, float newZ, long updateTime){
         currentX = newX;
         currentY = newY;
         currentZ = newZ;
         lastUpdate = updateTime;
-        lastSpeed = speed;
         process();
+    }
+
+    public void updateGpsValues(float currentSpeed){
+        this.currentSpeed = currentSpeed;
+
+        if(onGoingAccEvent.isEventPending()){
+            onGoingAccEvent.updateCurrentSpeed(this.currentSpeed);
+            onFinishedEvent();
+        }
     }
 
     private void process(){
@@ -40,20 +44,21 @@ public class EventHandler {
         + (currentY * currentY)
         + (currentZ * currentZ)) / EARTH_ACC;
 
-        Log.d("totalAccInG", "G's: " + accTotalInG);
-
         if(accTotalInG > MIN_G_TO_START_EVENT || onGoingAccEvent.isEventStarted()){
-            onGoingAccEvent.startEvent(lastUpdate, lastSpeed);
+            onGoingAccEvent.startAccEvent(lastUpdate, currentSpeed);
             onGoingAccEvent.updateCurrentG(accTotalInG);
 
             if(accTotalInG < MIN_G_TO_STOP_EVENT){
-                onGoingAccEvent.finishEvent(lastUpdate, lastSpeed);
-
-                if(onGoingAccEvent.isHardBrakeValidEvent()){
-                    //Not distinguishing Accelerations and brakes. Putting everything as a brake event
-                    this.eventListener.onEventRaised(onGoingAccEvent.getEventType());
-                }
+                onGoingAccEvent.finishAccEvent(lastUpdate);
             }
+        }
+    }
+
+    private void onFinishedEvent(){
+        if(onGoingAccEvent.isHardAccEvent()){
+            //Not distinguishing Accelerations and brakes. Putting everything as a brake event
+
+            this.eventListener.onEventRaised(onGoingAccEvent.getEventType());
         }
     }
 }

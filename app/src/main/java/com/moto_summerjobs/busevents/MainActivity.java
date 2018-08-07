@@ -15,7 +15,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener, EventListener, LocationListener {
     private TextView tvHardBrakeCount;
@@ -32,8 +31,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView lat;
     private TextView lng;
     private TextView vel;
+    private TextView tvLocationUpdate;
 
-    long speed = 0;
+    long currentSpeed = 0;
 
     LocationManager locationManager = null;
     Location secondLastLocation = new Location("Second Last");
@@ -57,10 +57,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         acc = findViewById(R.id.acc);
 
-        lat = (TextView) findViewById(R.id.latitude);
-        lng = (TextView) findViewById(R.id.longitude);
-        dir = (TextView) findViewById(R.id.direcao);
-        vel = (TextView) findViewById(R.id.velocidade);
+        lat = findViewById(R.id.latitude);
+        lng = findViewById(R.id.longitude);
+        dir = findViewById(R.id.direcao);
+        vel = findViewById(R.id.velocidade);
+        tvLocationUpdate = findViewById(R.id.locationUpdate);
 
         if (ActivityCompat
                 .checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -75,20 +76,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 3);
         }
 
-        locationManager.requestLocationUpdates(locationProvider,
-                SensorManager.SENSOR_DELAY_GAME,
-                10, this);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                SensorManager.SENSOR_DELAY_GAME,
-                10, this);
+        /*Based on https://stackoverflow.com/questions/16956398/android-location-network-provider-device-speed
+            network provider should not be used when we're working with currentSpeed
+        */
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                100,
+                0, this);
 
-    }
-
-    protected void onResume() {
-        super.onResume();
         mSensorManager.registerListener(this,
                 mAccelerometer,
                 SensorManager.SENSOR_DELAY_GAME);
+
     }
 
     @Override
@@ -103,10 +101,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (sensorEvent.sensor.getType() != Sensor.TYPE_ACCELEROMETER)
             return;
 
-        eventHandler.updateValues(sensorEvent.values[0],
-                                  sensorEvent.values[1],
-                                  sensorEvent.values[2], sensorEvent.timestamp, speed);
+        eventHandler.updateAccValues(sensorEvent.values[0],
+                sensorEvent.values[1],
+                sensorEvent.values[2],
+                sensorEvent.timestamp);
 
+        //For testing purposes
         acc.setText(String.format("Acc: %.3f",
                 Math.sqrt((sensorEvent.values[0] * sensorEvent.values[0])
                 + (sensorEvent.values[1] * sensorEvent.values[1])
@@ -134,44 +134,47 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
+
+    int locationUpdatesCount = 0;
     @Override
     public void onLocationChanged(Location location) {
+        locationUpdatesCount++;
 
-        if(secondLastLocation != null){
-            speed = (long) (Math.sqrt(
-                                Math.pow(location.getLongitude() - secondLastLocation.getLongitude(), 2)
-                                + Math.pow(location.getLatitude() - secondLastLocation.getLatitude(), 2)
-                        ) / (location.getTime() - secondLastLocation.getTime()));
-        }
-//        if(secondLastLocation != null){
-//            double elapsedTime = (location.getTime() - secondLastLocation.getTime()) / 1000; // Convert milliseconds to seconds
-//            speed = (long) (secondLastLocation.distanceTo(location) / elapsedTime);
-//        }
+        /*
+           Speed is is being get in M/S. Must times by 3.6 in order to convert
+           do KM/H
+         */
         if(location.hasSpeed())
-            speed = (long) location.getSpeed();
+            currentSpeed = (long) (location.getSpeed() * 3.6);
 
-        Log.d("Speed Summary", "\n" + speed);
+        Log.d("Speed Summary", "\n" + currentSpeed);
 
         dir.setText("Direção: " + secondLastLocation.bearingTo(location));
-        vel.setText("Velocidade: " + speed);
+        vel.setText("Velocidade: " + currentSpeed);
 
         lat.setText("Latitude: " + location.getLatitude());
         lng.setText("Longitude: " + location.getLongitude());
 
+        tvLocationUpdate.setText("Updates: " + locationUpdatesCount);
+
         secondLastLocation.setLatitude(location.getLatitude());
         secondLastLocation.setLongitude(location.getLongitude());
+
+        if(location.hasSpeed()){
+            eventHandler.updateGpsValues(location.getSpeed());
+        }
     }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-
+        Log.d("onStatusChanged", provider);
     }
     @Override
     public void onProviderEnabled(String provider) {
-
+        Log.d("onProviderEnabled", provider);
     }
     @Override
     public void onProviderDisabled(String provider) {
-
+        Log.d("onProviderDisabled", provider);
     }
 }

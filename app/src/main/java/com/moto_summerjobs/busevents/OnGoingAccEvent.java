@@ -18,21 +18,25 @@ public class OnGoingAccEvent {
 
 
     private boolean eventStarted = false;
-    private long initialEventTime, initialEventSpeed;
-    private long finalEventTime, finalEventSpeed;
+    private long initialEventTime;
+    private float initialEventSpeed;
+    private long finalEventTime;
+    private float finalEventSpeed;
     private List<Double> eventGList;
 
     private double avgOfG = 0;
     private double maxG = 0;
     private int numberOfSamples = 0;
-    private long totalEventTimeInMillisec = 0, dSpeed = 0;
+    private long totalEventTimeInMillisec = 0;
+    private float dSpeed = 0;
     private EventType eventType;
+    private boolean eventPending;
 
     public OnGoingAccEvent(){
         eventGList = new LinkedList<>();
     }
 
-    public void startEvent(long initialTime, long initialSpeed){
+    public void startAccEvent(long initialTime, float initialSpeed){
         if(eventStarted == false){
             initialEventTime = initialTime;
             initialEventSpeed = initialSpeed;
@@ -43,6 +47,8 @@ public class OnGoingAccEvent {
             avgOfG = -1;
             numberOfSamples = -1;
             totalEventTimeInMillisec = -1;
+            initialEventSpeed = -1;
+            finalEventSpeed = -1;
         }
     }
 
@@ -50,21 +56,16 @@ public class OnGoingAccEvent {
         eventGList.add(newG);
     }
 
-    public void finishEvent(long finalTime, long finalSpeed){
+    public void updateCurrentSpeed(float speed){
+        finalEventSpeed = speed;
+        eventPending = false;
+        afterEventProcess();
+    }
+
+    public void finishAccEvent(long finalTime){
         if(eventStarted == true){
             finalEventTime = finalTime;
-            finalEventSpeed = finalSpeed;
-
-            afterEventProcess();
-
-            Log.d("eventEnded", "time: " + finalEventTime);
-            Log.d("eventSummary", "Event took: " + this.totalEventTimeInMillisec + "ms"
-                    + "\n " + "Initial Speed: " + this.initialEventSpeed
-                    + "\n " + "Final Speed: " + this.finalEventSpeed
-                    + "\n " + "Max G: " + this.maxG
-                    + "\n " + "AVG of G: " + this.avgOfG
-                    + "\n " + "Number of samples: " + this.numberOfSamples
-                    + "\n " + "Is valid event: " + this.isHardBrakeValidEvent());
+            eventPending = true;
             eventStarted = false;
         }
     }
@@ -73,7 +74,11 @@ public class OnGoingAccEvent {
         return eventStarted;
     }
 
-    public boolean isHardBrakeValidEvent(){
+    public boolean isEventPending(){
+        return eventPending;
+    }
+
+    public boolean isHardAccEvent(){
         return this.numberOfSamples >= MIN_SAMPLES
                 && this.totalEventTimeInMillisec >= MIN_EVENT_TIME
                 && this.avgOfG >= MIN_G_AVG;
@@ -95,9 +100,19 @@ public class OnGoingAccEvent {
         this.numberOfSamples = eventGList.size();
         //Divided by 100000 because of event time is given in nanoseconds
         this.totalEventTimeInMillisec = (finalEventTime/1000000) - (initialEventTime/1000000);
-        this.dSpeed = ((finalEventSpeed) - (initialEventSpeed));
+        this.dSpeed = finalEventSpeed - initialEventSpeed;
 
-        eventType = (dSpeed >= 0) ? EventType.HardAccel : EventType.HardBrake;
+        eventType = dSpeed >= 0 ? EventType.HardAccel : EventType.HardBrake;
+
+        Log.d("eventEnded", "time: " + finalEventTime);
+        Log.d("eventSummary", "Event took: " + this.totalEventTimeInMillisec + "ms"
+                + "\n " + "Event Type: " + this.eventType
+                + "\n " + "Initial Speed: " + this.initialEventSpeed
+                + "\n " + "Final Speed: " + this.finalEventSpeed
+                + "\n " + "Max G: " + this.maxG
+                + "\n " + "AVG of G: " + this.avgOfG
+                + "\n " + "Number of samples: " + this.numberOfSamples
+                + "\n " + "Is valid event: " + this.isHardAccEvent());
     }
 
     public EventType getEventType(){

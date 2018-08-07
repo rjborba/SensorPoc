@@ -59,5 +59,10 @@
         android:layout_height="wrap_content"
         android:text="Velocidade: "
         android:id="@+id/velocidade"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="locationUpdate: "
+        android:id="@+id/locationUpdate"/>
 
 </LinearLayout>
