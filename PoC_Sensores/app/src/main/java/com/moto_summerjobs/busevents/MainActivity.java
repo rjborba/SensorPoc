@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if(location.hasSpeed())
             currentSpeed = (long) (location.getSpeed() * 3.6);
 
-        Log.d("Speed Summary", "\n" + currentSpeed);
+        Log.d("SpeedSummary", "\n" + currentSpeed);
 
         dir.setText("Direção: " + secondLastLocation.bearingTo(location));
         vel.setText("Velocidade: " + currentSpeed);
